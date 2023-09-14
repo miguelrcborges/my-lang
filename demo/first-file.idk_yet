@@ -1,0 +1,33 @@
+import "fmt"
+
+fun fib(n: i32) : i32
+	a := 0
+	b := 1
+	for i = 0; i < n; i++ :
+		c := a + b
+		a = b
+		b = c
+	return b
+
+fun main() : i32
+	// Regular line comment
+	fmt.Print("hello, world!")
+
+	/* 
+	 * Comment block
+	 * /*
+	 *  * Which can be nested because why not
+	 *  */
+	 *
+	 */	
+
+	 // variable declaration (implicit type)
+	 a_int := 5
+
+	 // variable declaration (explicit type)
+	 another_int : i32 = 5
+
+	 // function call
+	 tenth_elementh = fib(10)
+	 
+	 return 0
