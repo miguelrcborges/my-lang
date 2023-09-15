@@ -1,1 +1,1 @@
-gcc *.cpp -o mc
+gcc *.c -o mc -g

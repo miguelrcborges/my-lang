@@ -14,7 +14,7 @@ enum _TokenType {
 
 	/* Comparators */
 	GREATER = '>',
-	LESS    = '<',
+	LOWER   = '<',
 
 	/* Others */
 	COLON       = ':',
@@ -25,17 +25,20 @@ enum _TokenType {
 
 
 	/* Non Single Characters */
-	EQUAL_EQUAL = 128,
-	GREATER_EQUAL,
-	LESS_EQUAL,
+	PLUS_EQUAL = 128,
+	MINUS_EQUAL,
+	STAR_EQUAL,
+	SLASH_EQUAL,
+	PERCENT_EQUAL,
 	BANG_EQUAL,
-	PLUS_PLUS,
-	MINUS_MINUS,
-
+	EQUAL_EQUAL,
+	GREATER_EQUAL,
+	LOWER_EQUAL,
 
 	IDENTIFIER,
 	NUMBER,
 	STRING,
+
 	TRUE,
 	FALSE,
 
@@ -45,9 +48,8 @@ enum _TokenType {
 	IF,
 	ELSE,
 	RETURN,
+	END,
 
-	NEW_SCOPE,
-	END_SCOPE,
 	EOF_TOK,
 };
 
