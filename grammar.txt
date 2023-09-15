@@ -1,0 +1,39 @@
+/*
+ * NOTE: THIS ISN'T FINAL. JUST REPRESETING A SUBSET OF
+ * INTENDED LANGUAGE
+ * 
+ * NOTE: ALL EXTRA WHITESPACE BETWEEN TOKENS IS IGNORED
+ *
+ * EBNF syntax
+ */
+
+<number> = ["-"], {digit}, [".", {digit}], [("e" | "E"), ["-"], {digit}]},
+<string> = '"', ? any character ?, '"'
+<identifier> = alpha {alphanumeric}
+
+
+<variable_declaration> = <identifier>, ":", (<idetifier>, ["=", <expression>]) | ("=", <expression>)
+<function_declaration> = "fun", <indentifier>, "(", [{<indentifier>, ":", <identifier>, ","}, <identifier ":" <identifier>], ")", {<statement>}, "return", <expression>
+<declaration> = <variable_declaration> | <function_declaration>
+
+<expression> = <expression2>, { "||", <expression2> }
+<expression2> = <expression3>, { "&&", <expresion3> }
+<expression3> = <expression4>, { "|", <expression4> }
+<expression4> = <expression5>, { "^", <expression5> }
+<expression5> = <expression6>, { "&", <expression6> }
+<expression6> = <expression7>, { ("==" | "!="), <expression7> }
+<expression7> = <adition>, { ("<" | "<=" | ">" | ">="), <adition> }
+/* <expression8> = <expression9>, { ("<<" | ">>"), <expression9> } */
+<adition> = <multiplication> { ("+" | "-"), <multiplication> }
+<multiplication> = <unary> { ("*" | "/" | "%"), <unary> }
+<unary> = ("!" | "-" | "*"), <unary> | <primary>
+<primary> = <number> | <string> | "true" | "false" | "(", <expression>, ")" | <identifier>
+
+
+<variable_assignment> = <indentifier>, ("=" | "+=" | "-=" | "*=" | "/=" | "%="), <expression>
+<statement> = <variable_assigment> | <variable_declaration> | <expression>
+
+
+<digit> = ? all digit characters ?
+<alpha> = ? all chars in A-Za-z ? | "_"
+<alphanumeric> = alpha | digit

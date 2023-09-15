@@ -11,17 +11,22 @@ enum _TokenType {
 	PERCENT = '%', 
 	BANG    = '!',
 	EQUAL   = '=',
+	AND     = '&',
+	PIPE    = '|',
 
 	/* Comparators */
 	GREATER = '>',
 	LOWER   = '<',
 
 	/* Others */
-	COLON       = ':',
-	LEFT_PAREN  = '(',
-	RIGHT_PAREN = ')',
-	LEFT_BRACE  = '{',
-	RIGHT_BRACE = '}',
+	COLON         = ':',
+	LEFT_PAREN    = '(',
+	RIGHT_PAREN   = ')',
+	LEFT_BRACE    = '{',
+	RIGHT_BRACE   = '}',
+	LEFT_BRACKET  = '[',
+	RIGHT_BRACKET = ']',
+
 
 
 	/* Non Single Characters */
@@ -34,6 +39,8 @@ enum _TokenType {
 	EQUAL_EQUAL,
 	GREATER_EQUAL,
 	LOWER_EQUAL,
+	AND_AND,
+	PIPE_PIPE,
 
 	IDENTIFIER,
 	NUMBER,

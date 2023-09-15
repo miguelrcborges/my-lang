@@ -105,8 +105,29 @@ Token *Tokenizer_tokenize(const char *str) {
 		case RIGHT_BRACE:
 		case LEFT_PAREN:
 		case RIGHT_PAREN:
+		case LEFT_BRACKET:
+		case RIGHT_BRACKET:
 		case COLON:
 			p[ntok] = TOKEN(str[c], 1);
+			continue;
+
+		case AND:
+			if (str[c + 1] == '&') {
+				p[ntok] = TOKEN(AND_AND, 2);
+				c++;
+				line_pos++;
+			} else {
+				p[ntok] = TOKEN(AND, 1);
+			}
+			continue;
+		case PIPE:
+			if (str[c + 1] == '|') {
+				p[ntok] = TOKEN(PIPE_PIPE, 2);
+				c++;
+				line_pos++;
+			} else {
+				p[ntok] = TOKEN(PIPE, 1);
+			}
 			continue;
 
 
