@@ -3,10 +3,13 @@ import "fmt"
 fun fib(n: i32) : i32
 	a := 0
 	b := 1
-	for i = 0; i < n; i++ :
-		c := a + b
+
+	for i = 0; i < n; i += 1
+		c := a + b 
 		a = b
 		b = c
+	end
+
 	return b
 
 fun main() : i32
