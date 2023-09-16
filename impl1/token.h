@@ -43,11 +43,9 @@ enum _TokenType {
 	PIPE_PIPE,
 
 	IDENTIFIER,
-	NUMBER,
+	INTEGER,
+	FLOAT,
 	STRING,
-
-	TRUE,
-	FALSE,
 
 	/* Keywords */
 	IMPORT,

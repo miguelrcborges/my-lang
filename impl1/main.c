@@ -4,6 +4,9 @@
 
 #include "token.h"
 #include "scanner.h"
+#include "ast.h"
+#include "parser.h"
+#include "interpreter.h"
 
 int main(int argc, char **argv) {
 	if (argc > 3) {
@@ -33,5 +36,16 @@ int main(int argc, char **argv) {
 
 		free(tokens);
 		free(src);
+
+	} else {
+		char line_buffer[1024];
+		while (printf("> "), fgets(line_buffer, 1023, stdin)) {
+			Token *tokens = Scanner_tokenize(line_buffer);
+			Expression *expr = Parser_generateAST(tokens);
+			Interpreter_interpretAST(expr);
+			Parser_expressionResursiveFree(expr);
+			free(tokens);
+		}
+		puts("");
 	}
 }

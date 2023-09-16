@@ -27,9 +27,13 @@ static char *error_messages[] = {
 	"Found invalid token.",
 };
 
-static bool isLetter(char c);
-static bool isDigit(char c);
-static bool isWhiteSpace(char c);
+static const char *src = NULL;
+static size_t *lines_start = NULL;
+static size_t line;
+
+static bool isAlpha(char c);
+static bool isNumeric(char c);
+static bool isAlphanumeric(char c);
 
 bool Scanner_hasError() {
 	return error;
@@ -39,21 +43,42 @@ char *Scanner_errorMessage() {
 	return error_messages[error];
 }
 
+const char *Scanner_getSourceLine(int _line, int *len) {
+	if (_line > line) {
+		if (len != NULL)
+			*len = 0;
+		return "";
+	} 
+
+	if (len == NULL) {
+		if (_line == line)
+			*len = INT_MAX;
+		else
+			*len = lines_start[line] - lines_start[line-1] - 1;
+	}
+	return src + lines_start[_line-1];
+}
+
 Token *Scanner_tokenize(const char *str) {
 	if (str[0] == '\0') {
 		error = EMPTY_STRING;
 		return NULL;
 	}
+	src = str;
 
+	if (lines_start != NULL) {
+		free(lines_start);
+	}
+
+	line = 1;
 	Token *p = malloc(INITIAL_N_TOKENS_ALLOCATED * sizeof(*p));
-	size_t *lines_start = malloc(INITIAL_LINE_START_LOOKUP_ALLOCATED * sizeof(*lines_start));
+	lines_start = malloc(INITIAL_LINE_START_LOOKUP_ALLOCATED * sizeof(*lines_start));
 	if (p == NULL || lines_start == NULL) {
 		error = OUT_OF_MEMORY;
 		return NULL;
 	}
 	
 	int ntok = 0;
-	int line = 1;
 	int line_pos = 0;
 	lines_start[0] = 0;
 	int alines = INITIAL_LINE_START_LOOKUP_ALLOCATED;
@@ -99,7 +124,20 @@ Token *Scanner_tokenize(const char *str) {
 
 		case ' ':
 		case '\t':
+		case ',':
 			continue;
+
+		case '"':
+			;
+			size_t start = c;
+			do {
+				c += 1;
+			} while (str[c] != '"');
+			p[ntok] = TOKEN(STRING, c - start + 1);
+			line_pos += c - start;
+			ntok += 1;
+			break;
+
 
 		case LEFT_BRACE:
 		case RIGHT_BRACE:
@@ -109,25 +147,28 @@ Token *Scanner_tokenize(const char *str) {
 		case RIGHT_BRACKET:
 		case COLON:
 			p[ntok] = TOKEN(str[c], 1);
+			ntok++;
 			continue;
 
 		case AND:
 			if (str[c + 1] == '&') {
 				p[ntok] = TOKEN(AND_AND, 2);
-				c++;
-				line_pos++;
+				c += 1;
+				line_pos += 1;
 			} else {
 				p[ntok] = TOKEN(AND, 1);
 			}
+			ntok++;
 			continue;
 		case PIPE:
 			if (str[c + 1] == '|') {
 				p[ntok] = TOKEN(PIPE_PIPE, 2);
-				c++;
-				line_pos++;
+				c += 1;
+				line_pos += 1;
 			} else {
 				p[ntok] = TOKEN(PIPE, 1);
 			}
+			ntok += 1;
 			continue;
 
 
@@ -135,11 +176,12 @@ Token *Scanner_tokenize(const char *str) {
 case __t: \
 	if (str[c + 1] == '=' ) { \
 		p[ntok] = TOKEN(__eq_t, 2); \
-		c++; \
-		line_pos++; \
+		c += 1; \
+		line_pos += 1; \
 	} else { \
 		p[ntok] = TOKEN(__t, 1); \
 	} \
+	ntok += 1; \
 	continue;
 
 		HANDLE_EQUAL_TOKEN(PLUS_EQUAL, PLUS);
@@ -154,8 +196,31 @@ case __t: \
 #undef HANDLE_EQUAL_TOKEN
 
 		default:
-			; // Especial semicolon. Did you know that you can't declare variables in the first expression
-			  // of a switch/case??????????? TIL IKR
+			if (isNumeric(str[c])) {
+				int token_type = INTEGER;
+				size_t start_pos = c;
+				while (isNumeric(str[c+1]))
+					c += 1;
+				if (str[c+1] == '.') {
+					token_type = FLOAT;
+					c += 1;
+					while (isNumeric(str[c+1]))
+						c += 1;
+				}
+				p[ntok] = TOKEN(token_type, c - start_pos + 1);
+				line_pos += c - start_pos;
+				ntok += 1;
+				continue;
+			} else if (isAlpha(c)) {
+				size_t start_pos = c;
+				while (isAlphanumeric(str[c+1]))
+					c += 1;
+				p[ntok] = TOKEN(IDENTIFIER, c - start_pos + 1);
+				line_pos += c - start_pos;
+				ntok += 1;
+			}
+
+
 			char *str_end = strstr(str + lines_start[line-1], "\n");
 			int line_len;
 			if (str_end == NULL) {
@@ -168,25 +233,24 @@ case __t: \
 				"[Syntax Error] Unexpected Token\n"
 				"\t%d | %.*s\n"
 				"\t    %*s^\n\n",
-				line, line_len, str + lines_start[line-1], line_pos, "" 
+				(int) line, line_len, str + lines_start[line-1], line_pos, "" 
 			);
 		}
 	}
 	p[ntok] = TOKEN(EOF_TOK, 1);
 #undef TOKEN
 
-	free(lines_start);
 	return p;
 }
 
-inline bool isLetter(char c) {
-	return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+inline bool isAlpha(char c) {
+	return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_';
 }
 
-inline bool isDigit(char c) {
+inline bool isNumeric(char c) {
 	return c >= '0' && c <= '9';
 }
 
-inline bool isWhiteSpace(char c) {
-	return c == ' ' || c == '\n' || c == '\r' || c == '\t';
+inline bool isAlphanumeric(char c) {
+	return isAlpha(c) || isNumeric(c);
 }

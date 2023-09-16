@@ -25,6 +25,10 @@ static Expression *multiplication();
 static Expression *unary();
 static Expression *primary();
 
+static inline int __type() {
+	return tokens[token_position].tok;
+}
+
 bool Parser_hasError() {
 	return error;
 }
@@ -46,8 +50,7 @@ Expression *expression() {
 
 Expression *addition() {
 	Expression *expr = multiplication();
-	int type = tokens[token_position].tok;
-	if (type == PLUS || type == MINUS) {
+	while (__type() == PLUS || __type() == MINUS) {
 		Expression *n_expr = malloc(sizeof(BinaryExpression));
 		n_expr->bin.type = BINARY_EXPRESSION;
 		n_expr->bin.op = tokens[token_position];
@@ -61,8 +64,7 @@ Expression *addition() {
 
 Expression *multiplication() {
 	Expression *expr = unary();
-	int type = tokens[token_position].tok;
-	if (type == STAR || type == SLASH || type == PERCENT) {
+	while (__type() == STAR || __type() == SLASH || __type() == PERCENT) {
 		Expression *n_expr = malloc(sizeof(BinaryExpression));
 		n_expr->bin.type = BINARY_EXPRESSION;
 		n_expr->bin.op = tokens[token_position];
@@ -77,7 +79,7 @@ Expression *multiplication() {
 
 Expression *unary() {
 	int type = tokens[token_position].tok;
-	if (type == BANG || type == MINUS || type == STAR) {
+	while (__type() == BANG || __type() == MINUS || __type() == STAR) {
 		Expression *n_expr = malloc(sizeof(UnaryExpression));
 		n_expr->un.type = UNARY_EXPRESSION;
 		n_expr->un.op = tokens[token_position];
@@ -89,7 +91,7 @@ Expression *unary() {
 
 Expression *primary() {
 	Expression *expr;
-	if (tokens[token_position].tok == LEFT_PAREN) {
+	if (__type() == LEFT_PAREN) {
 		expr = malloc(sizeof(GroupExpression));
 		expr->group.type = GROUP_EXPRESSION;
 		token_position += 1;
@@ -105,6 +107,28 @@ Expression *primary() {
 		expr = malloc(sizeof(Literal));
 		expr->lit.type = LITERAL;
 		expr->lit.value = tokens[token_position];
+		token_position += 1;
 	}
 	return expr;
+}
+
+void Parser_expressionResursiveFree(Expression *expr) {
+	switch (expr->un.type) {
+	case LITERAL:
+		free(expr);
+		break;
+	case UNARY_EXPRESSION:
+		Parser_expressionResursiveFree(expr->un.right);
+		free(expr);
+		break;
+	case BINARY_EXPRESSION:
+		Parser_expressionResursiveFree(expr->bin.right);
+		Parser_expressionResursiveFree(expr->bin.left);
+		free(expr);
+		break;
+	case GROUP_EXPRESSION:
+		Parser_expressionResursiveFree(expr->group.expr);
+		free(expr);
+		break;
+	}
 }

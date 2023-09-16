@@ -11,5 +11,6 @@
 extern Expression *Parser_generateAST(Token *tokens);
 extern bool       Parser_hasError();
 extern char       *Parser_errorMessage();
+extern void       Parser_expressionResursiveFree(Expression *expr);
 
 #endif /* PARSER_H */
