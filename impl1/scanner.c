@@ -31,15 +31,15 @@ static bool isLetter(char c);
 static bool isDigit(char c);
 static bool isWhiteSpace(char c);
 
-bool Tokenizer_hasError() {
+bool Scanner_hasError() {
 	return error;
 };
 
-char *Tokenizer_errorMessage() {
+char *Scanner_errorMessage() {
 	return error_messages[error];
 }
 
-Token *Tokenizer_tokenize(const char *str) {
+Token *Scanner_tokenize(const char *str) {
 	if (str[0] == '\0') {
 		error = EMPTY_STRING;
 		return NULL;
