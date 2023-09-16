@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
 		fread(src, 1, size, f);
 		fclose(f);
 
-		Token *tokens = Tokenizer_tokenize(src);
+		Token *tokens = Scanner_tokenize(src);
 
 		free(tokens);
 		free(src);

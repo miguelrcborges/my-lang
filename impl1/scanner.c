@@ -13,14 +13,14 @@ enum CONSTANTS {
 };
 
 enum ERRORS {
-	EMPTY_STRING,
+	EMPTY_STRING = 1,
 	OUT_OF_MEMORY,
 	INVALID_TOKEN,
 };
 
-bool error = 0;
+static int error = 0;
 
-char *error_messages[] = {
+static char *error_messages[] = {
 	"No errors found."
 	"Empty string sent to the scanner.",
 	"Failed to allocate memory.",

@@ -68,4 +68,4 @@ struct Token {
 	TokenType tok;
 };
 
-#endif
+#endif /* TOKEN_H */

@@ -7,8 +7,8 @@
 #ifndef SCANNER_H
 #define SCANNER_H
 
-extern Token *Tokenizer_tokenize(const char *str);
-extern bool  Tokenizer_hasError();
-extern char  *Tokenizer_errorMessage();
+extern Token *Scanner_tokenize(const char *str);
+extern bool  Scanner_hasError();
+extern char  *Scanner_errorMessage();
 
-#endif
+#endif /* SCANNER_H */
