@@ -41,7 +41,11 @@ int main(int argc, char **argv) {
 		char line_buffer[1024];
 		while (printf("> "), fgets(line_buffer, 1023, stdin)) {
 			Token *tokens = Scanner_tokenize(line_buffer);
+			if (Scanner_hasError()) 
+				continue;
 			Expression *expr = Parser_generateAST(tokens);
+			if (Parser_hasError())
+				continue;
 			Interpreter_interpretAST(expr);
 			Parser_expressionResursiveFree(expr);
 			free(tokens);

@@ -13,6 +13,7 @@ enum _TokenType {
 	EQUAL   = '=',
 	AND     = '&',
 	PIPE    = '|',
+	CARET   = '^',
 
 	/* Comparators */
 	GREATER = '>',

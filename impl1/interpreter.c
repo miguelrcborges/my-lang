@@ -8,28 +8,48 @@
 #include "ast.h"
 #include "interpreter.h"
 
-typedef struct Value {
+typedef struct IntegerValue IntegerValue;
+typedef struct FloatValue FloatValue;
+typedef struct StringValue StringValue;
+typedef union Value Value;
+
+struct IntegerValue {
 	unsigned char type;
-	union {
-		int i;
-		double f;
-		char *s;
-	};
-} Value;
+	long v;
+};
+
+struct FloatValue {
+	unsigned char type;
+	double v;
+};
+
+struct StringValue {
+	unsigned char type;
+	int len;
+	char *p;
+};
+
+union Value {
+	IntegerValue i;
+	FloatValue f;
+	StringValue s;
+};
 
 static Value parseExpr(Expression *expr);
 
 void Interpreter_interpretAST(Expression *expr) {
 	Value v = parseExpr(expr);
-	switch (v.type) {
+	switch (v.i.type) {
 	case INTEGER:
-		printf("%d\n", v.i);
+		printf("%ld\n", v.i.v);
 		break;
 	case FLOAT:
-		printf("%lf\n", v.f);
+		printf("%lf\n", v.f.v);
+		break;
 	case STRING:
-		printf("\"%s\"\n", v.s);
-		free(v.s);
+		printf("\"%s\"\n", v.s.p);
+		free(v.s.p);
+		break;
 	}
 }
 
@@ -41,20 +61,19 @@ Value parseExpr(Expression *expr) {
 	const char *start = Scanner_getSourceLine(expr->lit.value.line, &len);
 	switch (expr->un.type) {
 	case LITERAL:
-		v.type = expr->lit.value.tok;
-		switch (v.type) {
+		v.i.type = expr->lit.value.tok;
+		switch (v.i.type) {
 		case INTEGER:
-			v.i = strtol(start + pos, NULL, 10);
+			v.i.v = strtol(start + pos, NULL, 10);
 			break;
 		case FLOAT:
-			v.f = strtod(start + pos, NULL);
+			v.f.v = strtod(start + pos, NULL);
 			break;
 		case STRING:
-			;
-			int s_len = expr->lit.value.length;
-			v.s = malloc(s_len - 1);
-			memcpy(v.s, start + pos + 1, s_len - 2);
-			v.s[s_len - 2] = '\0';
+			v.s.len = expr->lit.value.length - 2;
+			v.s.p = malloc(v.s.len + 1);
+			memcpy(v.s.p, start + pos + 1, v.s.len);
+			v.s.p[v.s.len] = '\0';
 			break;
 		}
 		break;
@@ -62,8 +81,8 @@ Value parseExpr(Expression *expr) {
 		v = parseExpr(expr->bin.left);
 		Value v2 = parseExpr(expr->bin.right);
 		if (
-			v.type == STRING && (v2.type == INTEGER || v2.type == FLOAT) ||
-			v2.type == STRING && (v.type == INTEGER || v.type == FLOAT)
+			v.s.type == STRING && (v2.i.type == INTEGER || v2.f.type == FLOAT) ||
+			v2.s.type == STRING && (v.i.type == INTEGER || v.f.type == FLOAT)
 		) {
 			fprintf(stderr, 
 				"[Semantic Error] Tried to add a number with a string.\n"
@@ -71,10 +90,10 @@ Value parseExpr(Expression *expr) {
 				"\t\%*s^\n\n",
 				len, start, pos, "" 
 			);
-			v.type = -1;
+			v.i.type = -1;
 			return v;
 		}
-		if (v.type == STRING && v2.type == STRING) {
+		if (v.s.type == STRING && v2.s.type == STRING) {
 			if (expr->bin.op.tok != '+') {
 				fprintf(stderr, 
 					"[Semantic Error] Invalid operation between strings.\n"
@@ -82,21 +101,118 @@ Value parseExpr(Expression *expr) {
 					"\t\%*s^\n\n",
 					len, start, pos, "" 
 				);
-				free(v.s);
-				free(v2.s);
-				v.type = -1;
+				free(v.s.p);
+				free(v2.s.p);
+				v.i.type = -1;
 			} else {
-				int l = strlen(v.s) + strlen(v2.s);
-				char *tmp = malloc(l + 1);
-				sprintf(tmp, "%s%s", v.s, v2.s);
-				free(v.s);
-				free(v2.s);
-				v.s = tmp;
+				char *tmp = malloc(v.s.len + v.s.len + 1);
+				sprintf(tmp, "%s%s", v.s.p, v2.s.p);
+				free(v.s.p);
+				free(v2.s.p);
+				v.s.p = tmp;
 			}
+			return v;
 		}
+		if (v.i.type == INTEGER && v2.i.type == INTEGER) {
+			switch (expr->bin.op.tok) {
+			case PLUS:
+				v.i.v += v2.i.v;
+				break;
+			case MINUS:
+				v.i.v -= v2.i.v;
+				break;
+			case STAR:
+				v.i.v *= v2.i.v;
+				break;
+			case SLASH:
+				v.i.v /= v2.i.v;
+				break;
+			case PERCENT:
+				v.i.v %= v2.i.v;
+				break;
+			case AND:
+				v.i.v &= v2.i.v;
+				break;
+			case PIPE:
+				v.i.v |= v2.i.v;
+				break;
+			case CARET:
+				v.i.v ^= v2.i.v;
+				break;
+			default:
+				fprintf(stderr, 
+					"[Semantic Error] Invalid operation between two integers.\n"
+					"\t\%.*s"
+					"\t\%*s^\n\n",
+					len, start, pos, "" 
+				);
+				v.i.type = -1;
+			} 
+			return v;
+		}
+		if (v.i.type == INTEGER) {
+			v.f.v = (double) v.i.v;
+			v.f.type = FLOAT;
+		} else if (v2.i.type == INTEGER) {
+			v2.f.v = (double) v2.i.v;
+			v2.f.type = FLOAT;
+		}
+		switch (expr->bin.op.tok) {
+		case PLUS:
+			v.f.v += v2.f.v;
+			break;
+		case MINUS:
+			v.f.v -= v2.f.v;
+			break;
+		case STAR:
+			v.f.v *= v2.f.v;
+			break;
+		case SLASH:
+			v.f.v /= v2.f.v;
+			break;
+		default:
+			fprintf(stderr, 
+				"[Semantic Error] Invalid operation between two floats.\n"
+				"\t\%.*s"
+				"\t\%*s^\n\n",
+				len, start, pos, "" 
+			);
+			v.i.type = -1;
+		} 
+		return v;
+
 	case UNARY_EXPRESSION:
+		if (expr->un.right->lit.type == STRING) {
+			fprintf(stderr, 
+				"[Semantic Error] Invalid operation on a string.\n"
+				"\t\%.*s"
+				"\t\%*s^\n\n",
+				len, start, pos, "" 
+			);
+			v.i.type = -1;
+			return v;
+		}
+		v = parseExpr(expr->un.right);
+		switch (expr->un.op.tok) {
+		case MINUS:
+			if (v.f.type == FLOAT) {
+				v.f.v = -v.f.v;
+			} else if (v.i.type == INTEGER) {
+				v.i.v = -v.i.v;
+			}
+			return v;
+		case STAR: 
+			fprintf(stderr, 
+				"[Semantic Error] Invalid operation on a string.\n"
+				"\t\%.*s"
+				"\t\%*s^\n\n",
+				len, start, pos, "" 
+			);
+			v.i.type = -1;
+			return v;
+		}
 	case GROUP_EXPRESSION:
-		break;
+		return parseExpr(expr->group.expr);
 	}
 	
 	return v;

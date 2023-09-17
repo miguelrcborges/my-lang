@@ -16,6 +16,7 @@ enum ERRORS {
 	EMPTY_STRING = 1,
 	OUT_OF_MEMORY,
 	INVALID_TOKEN,
+	UNCLOSED_STRING,
 };
 
 static int error = 0;
@@ -25,6 +26,7 @@ static char *error_messages[] = {
 	"Empty string sent to the scanner.",
 	"Failed to allocate memory.",
 	"Found invalid token.",
+	"Unclosed string.",
 };
 
 static const char *src = NULL;
@@ -132,7 +134,28 @@ Token *Scanner_tokenize(const char *str) {
 			size_t start = c;
 			do {
 				c += 1;
-			} while (str[c] != '"');
+			} while (str[c] != '"' && str[c+1] != '\r' && str[c+1] != '\n');
+
+			if (str[c] != '"' && (str[c+1] == '\r' || str[c+1] == '\n')) {
+				char *str_end = strstr(str + lines_start[line-1], "\n");
+				int line_len;
+				if (str_end == NULL) {
+					line_len = INT_MAX;
+				} else {
+					line_len = str_end - (str + lines_start[line-1]);
+				}
+				line_pos = c - start + 1;
+
+				fprintf(stderr, 
+					"[Syntax Error] Unclosed String\n"
+					"\t%d | %.*s\n"
+					"\t    %*s^\n\n",
+					(int) line, line_len, str + lines_start[line-1], line_pos, "" 
+				);
+				error = UNCLOSED_STRING;
+				continue;
+			}
+
 			p[ntok] = TOKEN(STRING, c - start + 1);
 			line_pos += c - start;
 			ntok += 1;
