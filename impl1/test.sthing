@@ -1,2 +1,10 @@
 ss == + / ,
-- : { } "
+? ? // ? ?
+- : { } "sss"
+
+/**
+ * Test comment
+ *
+ */
+// Flag the following error in the right line
+/*   */ ? /*    */

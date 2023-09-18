@@ -134,9 +134,9 @@ Token *Scanner_tokenize(const char *str) {
 			size_t start = c;
 			do {
 				c += 1;
-			} while (str[c] != '"' && str[c+1] != '\r' && str[c+1] != '\n');
+			} while (str[c] != '"' && str[c+1] != '\r' && str[c+1] != '\n' && str[c+1] != '\0');
 
-			if (str[c] != '"' && (str[c+1] == '\r' || str[c+1] == '\n')) {
+			if (str[c] != '"' && (str[c+1] == '\r' || str[c+1] == '\n' || str[c+1] == '\0')) {
 				char *str_end = strstr(str + lines_start[line-1], "\n");
 				int line_len;
 				if (str_end == NULL) {
@@ -144,7 +144,7 @@ Token *Scanner_tokenize(const char *str) {
 				} else {
 					line_len = str_end - (str + lines_start[line-1]);
 				}
-				line_pos = c - start + 1;
+				line_pos += c - start + 1;
 
 				fprintf(stderr, 
 					"[Syntax Error] Unclosed String\n"
@@ -194,6 +194,56 @@ Token *Scanner_tokenize(const char *str) {
 			ntok += 1;
 			continue;
 
+		case SLASH:
+			if (str[c+1] == '=') {
+				p[ntok] = TOKEN(SLASH_EQUAL, 2);
+				c += 1;
+				line_pos += 1;
+				ntok += 1;
+			} else if (str[c+1] == '/') {
+				do {
+					c += 1;
+				} while (str[c+1] != '\n' && str[c+1] != '\r');
+			} else if (str[c+1] == '*') {
+				int nest = 1;
+				c += 2;
+				line_pos += 2;
+				while (str[c] == '\0' && nest > 0) {
+					bool is_newline = false;
+					if (str[c] == '/' && str[c+1] == '*') {
+						nest += 1;
+						c += 2;
+						line_pos += 2;
+					} else if (str[c] == '*' && str[c+1] == '/') {
+						nest -= 1;
+						c += 2;
+						line_pos += 2;
+					} else if (str[c] == '\r') {
+						is_newline = true;
+					} else if (str[c] == '\n' || is_newline) {
+						if (line >= alines) {
+							size_t *n_lines_start = realloc(lines_start, alines * (2 * sizeof(*lines_start)));
+							if (n_lines_start == NULL) {
+								error = OUT_OF_MEMORY;
+								return NULL;
+							}
+							lines_start = n_lines_start;
+							alines *= 2;
+						}
+						lines_start[line] = c + 1;
+						line_pos = -1;
+						line += 1;
+					} else {
+						c += 1;
+						line_pos += 1;
+					}
+				}
+				c -= 1;
+			} else {
+				p[ntok] = TOKEN(SLASH, 1);
+				ntok += 1;
+			}
+
 
 #define HANDLE_EQUAL_TOKEN(__eq_t, __t) \
 case __t: \
@@ -210,7 +260,6 @@ case __t: \
 		HANDLE_EQUAL_TOKEN(PLUS_EQUAL, PLUS);
 		HANDLE_EQUAL_TOKEN(MINUS_EQUAL, MINUS);
 		HANDLE_EQUAL_TOKEN(STAR_EQUAL, STAR);
-		HANDLE_EQUAL_TOKEN(SLASH_EQUAL, SLASH);
 		HANDLE_EQUAL_TOKEN(PERCENT_EQUAL, PERCENT);
 		HANDLE_EQUAL_TOKEN(BANG_EQUAL, BANG);
 		HANDLE_EQUAL_TOKEN(EQUAL_EQUAL, EQUAL);
@@ -234,13 +283,14 @@ case __t: \
 				line_pos += c - start_pos;
 				ntok += 1;
 				continue;
-			} else if (isAlpha(c)) {
+			} else if (isAlpha(str[c])) {
 				size_t start_pos = c;
 				while (isAlphanumeric(str[c+1]))
 					c += 1;
 				p[ntok] = TOKEN(IDENTIFIER, c - start_pos + 1);
 				line_pos += c - start_pos;
 				ntok += 1;
+				continue;
 			}
 
 
