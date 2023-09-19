@@ -51,6 +51,7 @@ enum _TokenType {
 	/* Keywords */
 	IMPORT,
 	FUN,
+	FOR,
 	IF,
 	ELSE,
 	RETURN,

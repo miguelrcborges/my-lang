@@ -19,6 +19,23 @@ enum ERRORS {
 	UNCLOSED_STRING,
 };
 
+typedef struct KeywordStruct KeywordStruct;
+struct KeywordStruct {
+	char *string;
+	size_t length:56;
+	TokenType Token;
+};
+
+static KeywordStruct keywords[] = {
+	{ "import", 6, IMPORT },
+	{ "fun", 3, FUN },
+	{ "for", 3, FOR },
+	{ "if", 2, IF },
+	{ "else", 4, ELSE },
+	{ "return", 6, RETURN },
+	{ "end", 3, END }, // MAY BE REMOVED SOON BY SWITCHING TO IDENTION BASED SCOPES
+};
+
 static int error = 0;
 
 static char *error_messages[] = {
@@ -287,7 +304,20 @@ case __t: \
 				size_t start_pos = c;
 				while (isAlphanumeric(str[c+1]))
 					c += 1;
-				p[ntok] = TOKEN(IDENTIFIER, c - start_pos + 1);
+
+				size_t len = c - start_pos + 1;
+				bool is_identifier = true;
+				for (size_t i = 0; i < sizeof(keywords)/sizeof(keywords[0]); i += 1) {
+					if (len == keywords[i].length && strncmp(&(src[start_pos]), keywords[i].string, len) == 0) {
+						is_identifier = false;
+						p[ntok] = TOKEN(keywords[i].Token, len);
+						break;
+					}
+				}
+
+				if (is_identifier)
+					p[ntok] = TOKEN(IDENTIFIER, len);
+				
 				line_pos += c - start_pos;
 				ntok += 1;
 				continue;
