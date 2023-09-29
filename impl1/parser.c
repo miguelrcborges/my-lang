@@ -20,6 +20,8 @@ static int   token_position;
 static Token *tokens;
 
 static Expression *expression();
+static Expression *comparison();
+static Expression *comparison2();
 static Expression *addition();
 static Expression *multiplication();
 static Expression *unary();
@@ -45,7 +47,38 @@ Expression *Parser_generateAST(Token *s_tokens) {
 }
 
 Expression *expression() {
-	return addition();
+	return comparison();
+}
+
+Expression *comparison() {
+	Expression *expr = comparison2();
+	while (__type() == EQUAL_EQUAL || __type() == BANG_EQUAL) {
+		Expression *n_expr = malloc(sizeof(BinaryExpression));
+		n_expr->bin.type = BINARY_EXPRESSION;
+		n_expr->bin.op = tokens[token_position];
+		n_expr->bin.left = expr;
+		token_position += 1;
+		n_expr->bin.right = comparison2();
+		expr = n_expr;
+	}
+	return expr;
+}
+
+Expression *comparison2() {
+	Expression *expr = addition();
+	while (
+			__type() == LOWER || __type() == LOWER_EQUAL ||
+			__type() == GREATER || __type() == GREATER_EQUAL
+	) {
+		Expression *n_expr = malloc(sizeof(BinaryExpression));
+		n_expr->bin.type = BINARY_EXPRESSION;
+		n_expr->bin.op = tokens[token_position];
+		n_expr->bin.left = expr;
+		token_position += 1;
+		n_expr->bin.right = addition();
+		expr = n_expr;
+	}
+	return expr;
 }
 
 Expression *addition() {

@@ -85,7 +85,7 @@ Value parseExpr(Expression *expr) {
 			v2.s.type == STRING && (v.i.type == INTEGER || v.f.type == FLOAT)
 		) {
 			fprintf(stderr, 
-				"[Semantic Error] Tried to add a number with a string.\n"
+				"[Semantic Error] Invalid operation between a number and a string.\n"
 				"\t\%.*s"
 				"\t\%*s^\n\n",
 				len, start, pos, "" 
@@ -94,7 +94,50 @@ Value parseExpr(Expression *expr) {
 			return v;
 		}
 		if (v.s.type == STRING && v2.s.type == STRING) {
-			if (expr->bin.op.tok != '+') {
+			unsigned char op = expr->bin.op.tok;
+			if (op == '+') {
+				char *tmp = malloc(v.s.len + v.s.len + 1);
+				sprintf(tmp, "%s%s", v.s.p, v2.s.p);
+				free(v.s.p);
+				free(v2.s.p);
+				v.s.p = tmp;
+			} else if (op == '>') {
+				int cmp = strcmp(v.s.p, v2.s.p);
+				free(v.s.p);
+				free(v2.s.p);
+				v.i.type = INTEGER;
+				v.i.v = cmp > 0;
+			} else if (op == GREATER_EQUAL) {
+				int cmp = strcmp(v.s.p, v2.s.p);
+				free(v.s.p);
+				free(v2.s.p);
+				v.i.type = INTEGER;
+				v.i.v = cmp >= 0;
+			} else if (op == '<') {
+				int cmp = strcmp(v.s.p, v2.s.p);
+				free(v.s.p);
+				free(v2.s.p);
+				v.i.type = INTEGER;
+				v.i.v = cmp < 0;
+			} else if (op == LOWER_EQUAL) {
+				int cmp = strcmp(v.s.p, v2.s.p);
+				free(v.s.p);
+				free(v2.s.p);
+				v.i.type = INTEGER;
+				v.i.v = cmp <= 0;
+			} else if (op == EQUAL_EQUAL) {
+				int cmp = strcmp(v.s.p, v2.s.p);
+				free(v.s.p);
+				free(v2.s.p);
+				v.i.type = INTEGER;
+				v.i.v = cmp == 0;
+			} else if (op == BANG_EQUAL) {
+				int cmp = strcmp(v.s.p, v2.s.p);
+				free(v.s.p);
+				free(v2.s.p);
+				v.i.type = INTEGER;
+				v.i.v = cmp != 0;
+			} else {
 				fprintf(stderr, 
 					"[Semantic Error] Invalid operation between strings.\n"
 					"\t\%.*s"
@@ -104,12 +147,6 @@ Value parseExpr(Expression *expr) {
 				free(v.s.p);
 				free(v2.s.p);
 				v.i.type = -1;
-			} else {
-				char *tmp = malloc(v.s.len + v.s.len + 1);
-				sprintf(tmp, "%s%s", v.s.p, v2.s.p);
-				free(v.s.p);
-				free(v2.s.p);
-				v.s.p = tmp;
 			}
 			return v;
 		}
@@ -138,6 +175,24 @@ Value parseExpr(Expression *expr) {
 				break;
 			case CARET:
 				v.i.v ^= v2.i.v;
+				break;
+			case GREATER:
+				v.i.v = v.i.v > v2.i.v;
+				break;
+			case GREATER_EQUAL:
+				v.i.v = v.i.v >= v2.i.v;
+				break;
+			case LOWER:
+				v.i.v = v.i.v < v2.i.v;
+				break;
+			case LOWER_EQUAL:
+				v.i.v = v.i.v <= v2.i.v;
+				break;
+			case EQUAL_EQUAL:
+				v.i.v = v.i.v == v2.i.v;
+				break;
+			case BANG_EQUAL:
+				v.i.v = v.i.v != v2.i.v;
 				break;
 			default:
 				fprintf(stderr, 
@@ -169,6 +224,30 @@ Value parseExpr(Expression *expr) {
 			break;
 		case SLASH:
 			v.f.v /= v2.f.v;
+			break;
+		case GREATER:
+			v.i.v = v.f.v > v2.f.v;
+			v.i.type = INTEGER;
+			break;
+		case GREATER_EQUAL:
+			v.i.v = v.f.v >= v2.f.v;
+			v.i.type = INTEGER;
+			break;
+		case LOWER:
+			v.i.v = v.f.v < v2.f.v;
+			v.i.type = INTEGER;
+			break;
+		case LOWER_EQUAL:
+			v.i.v = v.f.v <= v2.f.v;
+			v.i.type = INTEGER;
+			break;
+		case EQUAL_EQUAL:
+			v.i.v = v.f.v == v2.f.v;
+			v.i.type = INTEGER;
+			break;
+		case BANG_EQUAL:
+			v.i.v = v.f.v != v2.f.v;
+			v.i.type = INTEGER;
 			break;
 		default:
 			fprintf(stderr, 
