@@ -194,6 +194,12 @@ Value parseExpr(Expression *expr) {
 			case BANG_EQUAL:
 				v.i.v = v.i.v != v2.i.v;
 				break;
+			case AND_AND:
+				v.i.v = v.i.v && v2.i.v;
+				break;
+			case PIPE_PIPE:
+				v.i.v = v.i.v || v2.i.v;
+				break;
 			default:
 				fprintf(stderr, 
 					"[Semantic Error] Invalid operation between two integers.\n"

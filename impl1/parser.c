@@ -20,6 +20,10 @@ static int   token_position;
 static Token *tokens;
 
 static Expression *expression();
+static Expression *logicalAnd();
+static Expression *binaryOr();
+static Expression *binaryXor();
+static Expression *binaryAnd();
 static Expression *comparison();
 static Expression *comparison2();
 static Expression *addition();
@@ -47,7 +51,73 @@ Expression *Parser_generateAST(Token *s_tokens) {
 }
 
 Expression *expression() {
-	return comparison();
+	Expression *expr = logicalAnd();
+	while (__type() == PIPE_PIPE) {
+		Expression *n_expr = malloc(sizeof(BinaryExpression));
+		n_expr->bin.type = BINARY_EXPRESSION;
+		n_expr->bin.op = tokens[token_position];
+		n_expr->bin.left = expr;
+		token_position += 1;
+		n_expr->bin.right = logicalAnd();
+		expr = n_expr;
+	}
+	return expr;
+}
+
+Expression *logicalAnd() {
+	Expression *expr = binaryOr();
+	while (__type() == AND_AND) {
+		Expression *n_expr = malloc(sizeof(BinaryExpression));
+		n_expr->bin.type = BINARY_EXPRESSION;
+		n_expr->bin.op = tokens[token_position];
+		n_expr->bin.left = expr;
+		token_position += 1;
+		n_expr->bin.right = binaryOr();
+		expr = n_expr;
+	}
+	return expr;
+}
+
+Expression *binaryOr() {
+	Expression *expr = binaryXor();
+	while (__type() == PIPE) {
+		Expression *n_expr = malloc(sizeof(BinaryExpression));
+		n_expr->bin.type = BINARY_EXPRESSION;
+		n_expr->bin.op = tokens[token_position];
+		n_expr->bin.left = expr;
+		token_position += 1;
+		n_expr->bin.right = binaryXor();
+		expr = n_expr;
+	}
+	return expr;
+}
+
+Expression *binaryXor() {
+	Expression *expr = binaryAnd();
+	while (__type() == CARET) {
+		Expression *n_expr = malloc(sizeof(BinaryExpression));
+		n_expr->bin.type = BINARY_EXPRESSION;
+		n_expr->bin.op = tokens[token_position];
+		n_expr->bin.left = expr;
+		token_position += 1;
+		n_expr->bin.right = binaryAnd();
+		expr = n_expr;
+	}
+	return expr;
+}
+
+Expression *binaryAnd() {
+	Expression *expr = comparison();
+	while (__type() == AND) {
+		Expression *n_expr = malloc(sizeof(BinaryExpression));
+		n_expr->bin.type = BINARY_EXPRESSION;
+		n_expr->bin.op = tokens[token_position];
+		n_expr->bin.left = expr;
+		token_position += 1;
+		n_expr->bin.right = comparison();
+		expr = n_expr;
+	}
+	return expr;
 }
 
 Expression *comparison() {
